@@ -3,6 +3,18 @@ import mediapipe as mp
 import math
 import winsound
 import numpy as np
+import logging
+import os
+
+# define log_path location (You can add your own log path for your log file)
+log_path = 'E:/hand_detection_logs/hand_detection.log'
+
+# Check if the log file exists, and if so, delete it to start fresh
+if os.path.exists(log_path):
+    os.remove(log_path)
+
+# Configure logging
+logging.basicConfig(filename=log_path, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Safety circle parameters (adjust as needed)
 safety_circle_center = (320, 170)  # (x, y) coordinates of the circle center
@@ -24,10 +36,12 @@ def mouse_callback(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         # Left mouse button click sets the new boundary center
         new_boundary_center = (x, y)
+        logging.info("New boundary center set to (%d, %d)", x, y)
     elif event == cv2.EVENT_MOUSEMOVE and calibration_mode:
         # If in calibration mode, calculate the new boundary radius while dragging
         if new_boundary_center is not None:
             new_boundary_radius = int(math.dist((x, y), new_boundary_center))
+            logging.info("New boundary radius set to %d", new_boundary_radius)
     elif event == cv2.EVENT_RBUTTONDOWN:
         # Right mouse button click toggles calibration mode
         calibration_mode = not calibration_mode
@@ -35,8 +49,10 @@ def mouse_callback(event, x, y, flags, param):
             # Exit calibration mode, update safety boundary
             if new_boundary_center is not None:
                 safety_circle_center = new_boundary_center
+                logging.info("Safety circle center updated to (%d, %d)", new_boundary_center[0], new_boundary_center[1])
             if new_boundary_radius is not None:
                 safety_circle_radius = new_boundary_radius
+                logging.info("Safety circle radius updated to %d", new_boundary_radius)
 
 # Create a window and set the mouse callback function
 cv2.namedWindow("Real-time Hand Detection")
@@ -100,6 +116,7 @@ while True:
     if hand_touching_circle_new and not hand_touching_circle and not beep_playing:
         winsound.Beep(1500, 50)
         beep_playing = True
+        logging.warning("Safety breach detected!")
     elif not hand_touching_circle_new and hand_touching_circle and beep_playing:
         beep_playing = False
     hand_touching_circle = hand_touching_circle_new
